@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+</head>
+<body>
+
+<div ng-app="myApp" ng-controller="myCtrl"> 
+    <p><?php echo $email; ?>. Data refresh 10s, now is {{timesok}}:</p>
+    <li ng-repeat="x in myWelcome">
+        {{ '(' + x.lat + ', ' + x.lon + ') , ' + x.createdDate }}
+    </li>
+</div>
+
+<script>
+var email = "<?php echo $email; ?>";
+var app = angular.module('myApp', []);
+var mapData;
+app.controller('myCtrl', function($scope, $http, $timeout) {
+
+    $scope.reload = function () {
+        /*call the map location json*/
+        $http.get("/index/getClientLocation/"+email)
+        .then(function(response) {
+            $scope.myWelcome = response.data;
+            $scope.timesok = new Date().toLocaleString();
+            mapData = response.data;
+        }, function myError(response) {
+            $scope.myWelcome = response.statusText;
+        });
+
+        $timeout(function(){
+            $scope.reload();
+            initMap(mapData);
+        },3000);
+
+    };
+    $scope.reload();
+});
+
+
+function initMap(data) {
+    // console.log("hello max : " + data[0].lat);
+
+    var map = new google.maps.Map(document.getElementById('map'), {
+        zoom: 16,
+        center: {lat: data[0].lat, lng: data[0].lon},
+        mapTypeId: 'terrain'
+    });
+
+    var flightPlanCoordinates = [
+        {lat: 25.0788309, lng: 121.570949},
+        {lat: 25.0788179, lng: 121.5709601},
+    ];
+    var flightPath = new google.maps.Polyline({
+        path: flightPlanCoordinates,
+        geodesic: true,
+        strokeColor: '#FF0000',
+        strokeOpacity: 1.0,
+        strokeWeight: 2
+    });
+
+    flightPath.setMap(map); 
+}
+</script>
+
+
+<!-- map -->
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDhWUzRsSXm8KsZFPLZusdWopRiNnHB2Fc"
+async defer></script>
+<div id="map" style="width:300px; height:300px;"></div>
+
+</body>
+</html>
